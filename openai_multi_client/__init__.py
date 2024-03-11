@@ -6,10 +6,9 @@ from typing import Any, Optional
 
 from aioprocessing import AioJoinableQueue, AioQueue
 from tenacity import wait_random_exponential, stop_after_attempt, AsyncRetrying, RetryError
-import openai
+from openai import AsyncOpenAI, AsyncAzureOpenAI
 
 logger = logging.getLogger(__name__)
-
 
 @dataclass
 class Payload:
@@ -31,6 +30,7 @@ class Payload:
 
 class OpenAIMultiClient:
     def __init__(self,
+                 aclient,
                  concurrency: int = 10,
                  max_retries: int = 10,
                  wait_interval: float = 0,
@@ -40,6 +40,7 @@ class OpenAIMultiClient:
                  data_template: Optional[dict] = None,
                  metadata_template: Optional[dict] = None,
                  custom_api=None):
+        self._aclient = aclient
         self._endpoint = endpoint
         self._wait_interval = wait_interval
         self._data_template = data_template or {}
@@ -76,17 +77,17 @@ class OpenAIMultiClient:
         if self._mock_api:
             payload.response = await self._mock_api(payload)
         elif payload.endpoint == "completions":
-            payload.response = await openai.Completion.acreate(**payload.data)
+            payload.response = await self._aclient.completions.create(**payload.data)
         elif payload.endpoint == "chat.completions" or payload.endpoint == "chats":
-            payload.response = await openai.ChatCompletion.acreate(**payload.data)
+            payload.response = await self._aclient.chat.completions.create(**payload.data)
         elif payload.endpoint == "embeddings":
-            payload.response = await openai.Embedding.acreate(**payload.data)
+            payload.response = await self._aclient.embeddings.create(**payload.data)
         elif payload.endpoint == "edits":
-            payload.response = await openai.Edit.acreate(**payload.data)
+            payload.response = await self._aclient.edits.create(**payload.data)
         elif payload.endpoint == "images":
-            payload.response = await openai.Image.acreate(**payload.data)
+            payload.response = await self._aclient.images.generate(**payload.data)
         elif payload.endpoint == "fine-tunes":
-            payload.response = await openai.FineTune.acreate(**payload.data)
+            payload.response = await self._aclient.fine_tunes.create(**payload.data)
         else:
             raise ValueError(f"Unknown endpoint {payload.endpoint}")
         logger.debug(f"Processed {payload}")
@@ -235,3 +236,4 @@ class OpenAIMultiOrderedClient(OpenAIMultiClient):
         )
         self._put_counter += 1
         self._in_queue.put(payload)
+

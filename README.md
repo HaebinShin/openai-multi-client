@@ -59,9 +59,10 @@ Here is an example of how to use the `openai-multi-client` library.
 
 ```python
 from openai_multi_client import OpenAIMultiClient
+from openai import AsyncOpenAI
 
 # Remember to set the OPENAI_API_KEY environment variable to your API key
-api = OpenAIMultiClient(endpoint="chats", data_template={"model": "gpt-3.5-turbo"})
+api = OpenAIMultiClient(AsyncOpenAI(), endpoint="chats", data_template={"model": "gpt-3.5-turbo"})
 
 
 def make_requests():
@@ -89,9 +90,10 @@ If you prefer, you can use callback style programming instead of the iterating o
 
 ```python
 from openai_multi_client import OpenAIMultiClient, Payload
+from openai import AsyncOpenAI
 
 # Remember to set the OPENAI_API_KEY environment variable to your API key
-api = OpenAIMultiClient(endpoint="chats", data_template={"model": "gpt-3.5-turbo"})
+api = OpenAIMultiClient(AsyncOpenAI(), endpoint="chats", data_template={"model": "gpt-3.5-turbo"})
 
 
 def on_result(result: Payload):
